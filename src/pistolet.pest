@@ -1,0 +1,77 @@
+Program = { SOI ~ TERM ~ EOI }
+
+TERM = {
+    "{" ~
+    (FUN | LET | WHILE | IF)+
+    ~ "}"
+}
+
+BOOL_EXPR = { 
+    BOOL_EXPR_T ~ ((and | or) ~ BOOL_EXPR_T)* 
+}
+
+BOOL_EXPR_T = _{ 
+    (not)? ~ ( ("(" ~ BOOL_EXPR ~ ")") | boolean | VAR_NAME )
+}
+
+EXPR = { 
+    EXPR_T ~ ((add | sub | mul | div) ~ EXPR_T)* 
+}
+
+EXPR_T = _{ 
+    ("(" ~ EXPR ~ ")") | NUM | VAR_NAME 
+}
+
+PARA_LIST = {
+    "(" ~ (VAR_NAME ~ ":" ~ TYPE_NAME)? ~ ")"
+}
+
+FUN = {
+    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ TERM ~ "."
+}
+
+LET = {
+    "let" ~ VAR_NAME ~ "=" ~ EXPR ~ "."
+}
+
+WHILE = {
+    "while" ~ BOOL_EXPR ~ TERM ~ "."
+}
+
+IF = {
+   "if" ~ BOOL_EXPR ~ TERM ~ TERM ~ "."
+}
+
+boolean = { "true" | "false" }
+
+alpha = { 'a'..'z' | 'A'..'Z' }
+
+digit = { '0'..'9' }
+
+int = @{ digit+ }
+
+add = { "+" }
+
+sub = { "-" }
+
+mul = { "*" }   
+
+div = { "/" }
+
+and = { "&&" }
+
+or = { "||" }   
+
+not = { "~" }
+
+FUN_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
+
+TYPE_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
+
+VAR_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
+
+NUM = @{ ("-")? ~ int ~ ("." ~ int+)? }
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+COMMENT = _{ "(*" ~ (!"*)" ~ ANY)* ~ "*)" }
