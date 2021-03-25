@@ -16,6 +16,10 @@ F_TERM = {
     ~ "}"
 }
 
+EXPR_A = {
+    BOOL_EXPR | EXPR
+}
+
 BOOL_EXPR = { 
     BOOL_EXPR_T ~ ((and | or) ~ BOOL_EXPR_T)* 
 }
@@ -37,7 +41,7 @@ PARA_LIST = {
 }
 
 RETURN = {
-    "return" ~ EXPR ~ "."
+    "return" ~ EXPR_A ~ "."
 }
 
 FUN = {
@@ -45,7 +49,7 @@ FUN = {
 }
 
 LET = {
-    "let" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ "=" ~ EXPR ~ "."
+    "let" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ "=" ~ EXPR_A ~ "."
 }
 
 WHILE = {

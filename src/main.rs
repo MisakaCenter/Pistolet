@@ -16,7 +16,8 @@ fn main() {
         return x.
     }.
     
-    let  y: nat = 2 + 10 + 1 * 1 / 2 - 3.
+    let y: nat = 2 + 10 + 1 * 1 / 2 - 3.
+    let b: bool = true && false || true. 
     "
     ;
     let fun_program_parsed = PistoletParser::parse(Rule::Program, fun_program);
