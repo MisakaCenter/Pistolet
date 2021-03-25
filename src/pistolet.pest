@@ -1,8 +1,18 @@
-Program = { SOI ~ TERM ~ EOI }
+Program = { SOI ~ Prog ~ EOI }
+
+Prog = {
+    (FUN | LET | WHILE | IF)+
+}
 
 TERM = {
     "{" ~
     (FUN | LET | WHILE | IF)+
+    ~ "}"
+}
+
+F_TERM = {
+    "{" ~
+    (FUN | LET | WHILE | IF | RETURN)+
     ~ "}"
 }
 
@@ -23,15 +33,19 @@ EXPR_T = _{
 }
 
 PARA_LIST = {
-    "(" ~ (VAR_NAME ~ ":" ~ TYPE_NAME)? ~ ")"
+ ("(" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ ")")+
+}
+
+RETURN = {
+    "return" ~ EXPR ~ "."
 }
 
 FUN = {
-    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ TERM ~ "."
+    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ F_TERM ~ "."
 }
 
 LET = {
-    "let" ~ VAR_NAME ~ "=" ~ EXPR ~ "."
+    "let" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ "=" ~ EXPR ~ "."
 }
 
 WHILE = {

@@ -9,13 +9,17 @@ use pest::Parser;
 pub struct PistoletParser;
 
 fn main() {
-    let program = 
+    let fun_program = 
+    "fun foo (X: NAT)(Y : BOOL) -> BOOL 
+    {
+        let x: bool = true.
+        return x.
+    }.
     
-    "{
-        let y = 1.
-        if true { let x = 1 + y. } {let x = 2. }.
-    }"
+    let  y: nat = 2 + 10 + 1 * 1 / 2 - 3.
+    "
     ;
-    let parsed_program = PistoletParser::parse(Rule::Program, program);
-    println!("{:#?}", parsed_program);
+    let fun_program_parsed = PistoletParser::parse(Rule::Program, fun_program);
+    println!("{:#?}", fun_program_parsed);
+
 }
