@@ -1,23 +1,26 @@
 Program = { SOI ~ Prog ~ EOI }
 
 Prog = {
-    (FUN | LET | WHILE | IF)+
+    (FUN | LET | WHILE | IF | RETURN)+
 }
 
 TERM = {
-    "{" ~
-    (FUN | LET | WHILE | IF)+
-    ~ "}"
-}
-
-F_TERM = {
     "{" ~
     (FUN | LET | WHILE | IF | RETURN)+
     ~ "}"
 }
 
-EXPR_A = {
-    BOOL_EXPR | EXPR
+FUN_CALL = {
+    FUN_NAME ~ "(" ~ EXPR_A ~ ("," ~ EXPR_A)* ~ ")"
+}
+
+
+EXPR_A = _{
+    BOOL_EXPR | EXPR | NONE
+}
+
+NONE = {
+    ""
 }
 
 BOOL_EXPR = { 
@@ -25,7 +28,11 @@ BOOL_EXPR = {
 }
 
 BOOL_EXPR_T = _{ 
-    (not)? ~ ( ("(" ~ BOOL_EXPR ~ ")") | boolean | VAR_NAME )
+    (not)? ~ ( ("(" ~ BOOL_EXPR ~ ")") | FUN_CALL | boolean | VAR_NAME | EQ_EXPR)
+}
+
+EQ_EXPR = {
+    EXPR ~ eq ~ EXPR
 }
 
 EXPR = { 
@@ -33,7 +40,7 @@ EXPR = {
 }
 
 EXPR_T = _{ 
-    ("(" ~ EXPR ~ ")") | NUM | VAR_NAME 
+    ("(" ~ EXPR ~ ")") | FUN_CALL | NUM | VAR_NAME | FUN_CALL
 }
 
 PARA_LIST = {
@@ -45,7 +52,7 @@ RETURN = {
 }
 
 FUN = {
-    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ F_TERM ~ "."
+    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ TERM ~ "."
 }
 
 LET = {
@@ -81,6 +88,8 @@ and = { "&&" }
 or = { "||" }   
 
 not = { "~" }
+
+eq = { "=?" }
 
 FUN_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
 

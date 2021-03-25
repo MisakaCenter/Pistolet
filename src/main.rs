@@ -17,10 +17,17 @@ fn main() {
     }.
     
     let y: nat = 2 + 10 + 1 * 1 / 2 - 3.
+
     let b: bool = true && false || true. 
+
+    if (b) {let x: nat = y. return y.} {return 0.}.
+
+    while (1 =? 1) {
+        return foo(1, true).
+    }.
+
     "
     ;
     let fun_program_parsed = PistoletParser::parse(Rule::Program, fun_program);
     println!("{:#?}", fun_program_parsed);
-
 }
