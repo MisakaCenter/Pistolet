@@ -1,7 +1,7 @@
-Program = { SOI ~ Prog ~ EOI }
+program = { SOI ~ sentence+ ~ EOI}
 
-Prog = {
-    (FUN | LET | WHILE | IF | RETURN)+
+sentence = {
+    (FUN | LET | WHILE | IF | RETURN)
 }
 
 TERM = {
@@ -23,11 +23,11 @@ NONE = {
 }
 
 BOOL_EXPR = { 
-    BOOL_EXPR_T ~ ((and | or) ~ BOOL_EXPR_T)* 
+    BOOL_EXPR_T ~ ((and | or | xor) ~ BOOL_EXPR_T)* 
 }
 
 BOOL_EXPR_T = _{ 
-    (not)? ~ ( ("(" ~ BOOL_EXPR ~ ")") | FUN_CALL | BOOL | VAR_NAME | EQ_EXPR)
+     ( ("(" ~ BOOL_EXPR ~ ")") | BOOL_VALUE | EQ_EXPR )
 }
 
 EQ_EXPR = {
@@ -38,8 +38,16 @@ EXPR = {
     EXPR_T ~ ((add | sub | mul | div) ~ EXPR_T)* 
 }
 
+BOOL_VALUE = {
+    FUN_CALL | BOOL | VAR_NAME
+}
+
+VALUE = {
+    FUN_CALL | FLOAT | INTEGER | VAR_NAME
+}
+
 EXPR_T = _{ 
-    ("(" ~ EXPR ~ ")") | FUN_CALL | FLOAT | INTEGER | VAR_NAME
+    ("(" ~ EXPR ~ ")") | VALUE
 }
 
 PARA_LIST = {
@@ -86,7 +94,7 @@ and = { "&&" }
 
 or = { "||" }   
 
-not = { "~" }
+xor = { "<|" }
 
 eq = { "=?" }
 
