@@ -28,7 +28,7 @@ BOOL_EXPR = {
 }
 
 BOOL_EXPR_T = _{ 
-    (not)? ~ ( ("(" ~ BOOL_EXPR ~ ")") | FUN_CALL | boolean | VAR_NAME | EQ_EXPR)
+    (not)? ~ ( ("(" ~ BOOL_EXPR ~ ")") | FUN_CALL | BOOL | VAR_NAME | EQ_EXPR)
 }
 
 EQ_EXPR = {
@@ -67,7 +67,7 @@ IF = {
    "if" ~ BOOL_EXPR ~ TERM ~ TERM ~ "."
 }
 
-boolean = { "true" | "false" }
+BOOL = { "true" | "false" }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 
