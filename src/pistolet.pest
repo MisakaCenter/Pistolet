@@ -14,7 +14,6 @@ FUN_CALL = {
     FUN_NAME ~ "(" ~ EXPR_A ~ ("," ~ EXPR_A)* ~ ")"
 }
 
-
 EXPR_A = _{
     BOOL_EXPR | EXPR | NONE
 }
@@ -40,7 +39,7 @@ EXPR = {
 }
 
 EXPR_T = _{ 
-    ("(" ~ EXPR ~ ")") | FUN_CALL | NUM | VAR_NAME | FUN_CALL
+    ("(" ~ EXPR ~ ")") | FUN_CALL | FLOAT | INTEGER | VAR_NAME
 }
 
 PARA_LIST = {
@@ -52,7 +51,7 @@ RETURN = {
 }
 
 FUN = {
-    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ TERM ~ "."
+    "fun" ~ FUN_NAME ~ PARA_LIST ~ "->" ~ TYPE_NAME ~ TERM
 }
 
 LET = {
@@ -60,11 +59,11 @@ LET = {
 }
 
 WHILE = {
-    "while" ~ BOOL_EXPR ~ TERM ~ "."
+    "while" ~ BOOL_EXPR ~ TERM
 }
 
 IF = {
-   "if" ~ BOOL_EXPR ~ TERM ~ TERM ~ "."
+   "if" ~ BOOL_EXPR ~ TERM ~ TERM
 }
 
 BOOL = { "true" | "false" }
@@ -97,7 +96,9 @@ TYPE_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
 
 VAR_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
 
-NUM = @{ ("-")? ~ int ~ ("." ~ int+)? }
+FLOAT = @{ ("-")? ~ int ~ ("." ~ int+) }
+
+INTEGER = @{ ("-")? ~ int }
 
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
