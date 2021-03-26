@@ -1,22 +1,20 @@
-
-
-
-let y: bool = (1 =? 1) && true <| x.
-
-let x: int = 1 + xx - 1.
-(*
-fun foo (X: NAT)(Y : BOOL) -> BOOL {
+fun foo (X: nat)(Y : bool) -> bool {
     let x: bool = true.
     return x.
 }
 
-let y: nat = -2.1 + 10 + 1 * 1 / 2 - 3.
-
-let b: bool = true && false || true. 
-
-if (b) {let x: nat = y. return y.} {return 0.}
-
 while (1 =? 1) {
     return foo(1, true).
 }
-*)
+
+if (b && true) 
+{let x: nat = y. let x: nat = y. return 1.} 
+{let x: nat = y. return x+y.}
+
+let y: bool = (1 =? 1) && true <| x.
+
+let x: int = 1 + xx - 1.
+
+let y: nat = -2.1 + 10 + 1 * 1 / 2 - 3.
+
+let b: bool = true && false || true. 
