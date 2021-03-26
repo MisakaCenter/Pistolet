@@ -11,7 +11,19 @@ TERM = {
 }
 
 FUN_CALL = {
-    FUN_NAME ~ "(" ~ EXPR_A ~ ("," ~ EXPR_A)* ~ ")"
+    FUN_NAME ~ "(" ~ EXPR_Noty_A ~ ("," ~ EXPR_Noty_A)* ~ ")"
+}
+
+EXPR_Noty_A = _{
+    EXPR_NoTy | NONE
+}
+
+EXPR_NoTy = { 
+    EXPR_NoTy_T ~ ((and | or | xor | add | sub | mul | div) ~ EXPR_NoTy_T)* 
+}
+
+EXPR_NoTy_T = _{ 
+     ( ("(" ~ EXPR_NoTy ~ ")") | (BOOL_VALUE | VALUE) | EQ_EXPR )
 }
 
 EXPR_A = _{
@@ -51,11 +63,15 @@ EXPR_T = _{
 }
 
 PARA_LIST = {
- ("(" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ ")")+
+ ("(" ~ VAR_BIND ~ ")")+
+}
+
+VAR_BIND = {
+    VAR_NAME ~ ":" ~ TYPE_NAME
 }
 
 RETURN = {
-    "return" ~ EXPR_A ~ "."
+    "return" ~ EXPR_Noty_A ~ "."
 }
 
 FUN = {
