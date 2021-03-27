@@ -111,8 +111,7 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                             _ => unreachable!()
                     }},
                     match new_pair.peek().unwrap().as_rule() {
-                        Rule::BOOL_EXPR => parse_expr(new_pair.peek().unwrap().into_inner()),
-                        Rule::EXPR => parse_expr(new_pair.peek().unwrap().into_inner()),
+                        Rule::EXPR_NoTy => parse_expr(new_pair.peek().unwrap().into_inner()),
                         _ => unreachable!()
                     }
                 )

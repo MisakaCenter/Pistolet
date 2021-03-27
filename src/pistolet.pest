@@ -19,7 +19,7 @@ EXPR_Noty_A = _{
 }
 
 EXPR_NoTy = { 
-    EXPR_NoTy_T ~ ((and | or | xor | add | sub | mul | div) ~ EXPR_NoTy_T)* 
+    EQ_EXPR | (EXPR_NoTy_T ~ ((and | or | xor | add | sub | mul | div) ~ EXPR_NoTy_T)*)
 }
 
 EXPR_NoTy_T = _{ 
@@ -79,7 +79,7 @@ FUN = {
 }
 
 LET = {
-    "let" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ "=" ~ EXPR_A ~ "."
+    "let" ~ VAR_NAME ~ ":" ~ TYPE_NAME ~ "=" ~ EXPR_Noty_A ~ "."
 }
 
 WHILE = {
