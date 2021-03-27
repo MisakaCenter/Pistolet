@@ -1,2 +1,4 @@
 let x: int = 1.
 let y: int = 1 + x.
+let y: int = 1 + y.
+let z: int = x + y.

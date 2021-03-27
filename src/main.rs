@@ -20,9 +20,28 @@ fn main() {
     println!("{:#?}", ast_eval(parse_to_ast(&unparsed_file).unwrap(), &state));
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ValueBind<'a> {
+    Vb(&'a str, VarValue) /* type, value*/
+}
+
+impl <'a> ValueBind<'a> {
+    pub fn get_type(&self) -> &'a str {
+        match self {
+            ValueBind::Vb(t, _) => t
+        }
+    }
+
+    pub fn get_value(&self) -> VarValue {
+        match self {
+            ValueBind::Vb(_, v) => *v
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct ProgList<'a> {
-    var_list: HashMap<&'a str, VarValue>,
+    var_list: HashMap<&'a str, ValueBind<'a>>,
     func_list: HashMap<&'a str, PistoletAST<'a>>
 }
 
@@ -30,10 +49,10 @@ struct ProgList<'a> {
 struct ProgState<'a>(Rc<RefCell<ProgList<'a>>>);
 
 impl <'a>ProgState<'a> {
-    pub fn insert(&self, var_name: &'a str, var_value: VarValue) {
+    pub fn insert(&self, var_name: &'a str, var_value: ValueBind<'a>) {
         self.0.borrow_mut().var_list.insert(var_name, var_value);
     }
-    pub fn get(&self, var_name: &'a str) -> Option<VarValue> {
+    pub fn get(&self, var_name: &'a str) -> Option<ValueBind> {
         match self.0.borrow().var_list.get(var_name) {
             Some(n) => Some(*n),
             None => None
@@ -72,35 +91,35 @@ fn type_dec(v1: VarValue, v2: VarValue) -> bool {
     }
 }
 
-fn var_eval<'a>(name: &'a str, global_state: &ProgState<'a>) -> Result<VarValue, RuntimeErr> {
+fn var_eval<'a>(name: &'a str, global_state: &'a ProgState<'a>) -> Result<ValueBind<'a>, RuntimeErr> {
     match global_state.get(name) {
         Some(result) => Ok(result),
         None => Err(RuntimeErr::VarUsedBeforeDefine)
     }
 }
 
-fn expr_eval<'a>(expr: PistoletExpr<'a>, state: &ProgState<'a>) -> Result<VarValue, RuntimeErr> {
+fn expr_eval<'a>(expr: PistoletExpr<'a>, state: &'a ProgState<'a>) -> Result<ValueBind<'a>, RuntimeErr> {
     match expr {
         PistoletExpr::Val(value) => {
             match value {
-                PistoletValue::Integer(n) => Ok(VarValue::Int(n)),
-                PistoletValue::Float(n) => Ok(VarValue::Float(n)),
-                PistoletValue::Boolean(n) => Ok(VarValue::Bool(n)),
+                PistoletValue::Integer(n) => Ok(ValueBind::Vb("int", VarValue::Int(n))),
+                PistoletValue::Float(n) => Ok(ValueBind::Vb("float", VarValue::Float(n))),
+                PistoletValue::Boolean(n) => Ok(ValueBind::Vb("bool", VarValue::Bool(n))),
                 PistoletValue::Var(n) => var_eval(n, state),
                 _ => unimplemented!()
             }
         },
         PistoletExpr::Add(e1, e2) => {
-            let v1 = expr_eval(*e1, state).unwrap();
-            let v2 = expr_eval(*e2, state).unwrap();
+            let v1 = expr_eval(*e1, state).unwrap().get_value();
+            let v2 = expr_eval(*e2, state).unwrap().get_value();
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Int(n) => match v2 {
-                        VarValue::Int(m) => Ok(VarValue::Int(n + m)),
+                        VarValue::Int(m) => Ok(ValueBind::Vb("int",VarValue::Int(n + m))),
                         _ => unreachable!()
                     },
                     VarValue::Float(n) => match v2 {
-                        VarValue::Float(m) => Ok(VarValue::Float(n + m)),
+                        VarValue::Float(m) => Ok(ValueBind::Vb("float",VarValue::Float(n + m))),
                         _ => unreachable!()
                     },
                     _ => unreachable!()
@@ -132,10 +151,15 @@ fn ast_eval<'a>(ast: PistoletAST<'a>, state: &'a ProgState<'a>) -> Result<&'a Pr
         },
         PistoletAST::Let(var_name, var_type, var_expr) => {
             let var_value = expr_eval(var_expr, state).unwrap();
-            state.insert(var_name, var_value);
-            Ok(state)
+            if var_value.get_type().eq_ignore_ascii_case(var_type) {
+                state.insert(var_name, var_value);
+                Ok(state)
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+            
         }
-        PistoletAST::EOI => return Ok(state),
-        _ => return Err(RuntimeErr::Unknown)
+        PistoletAST::EOI => Ok(state),
+        _ => Err(RuntimeErr::Unknown)
     }
 }
