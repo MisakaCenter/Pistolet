@@ -1,5 +1,5 @@
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PistoletValue<'a> {
     Integer(i128),
     Float(f64),
@@ -8,7 +8,7 @@ enum PistoletValue<'a> {
     Funcall(&'a str, Vec<PistoletExpr<'a>>)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PistoletExpr<'a> {
     Val(PistoletValue<'a>),
     Add(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
@@ -21,7 +21,7 @@ enum PistoletExpr<'a> {
     Eq(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PistoletAST<'a> {
     Seq(Vec<PistoletAST<'a>>),
     Let(&'a str, &'a str, PistoletExpr<'a>),
