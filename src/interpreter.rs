@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, Copy)]
@@ -13,7 +14,6 @@ impl<'a> ValueBind<'a> {
             ValueBind::Vb(t, _) => t,
         }
     }
-
     pub fn get_value(&self) -> VarValue {
         match self {
             ValueBind::Vb(_, v) => *v,
@@ -40,6 +40,17 @@ impl<'a> ProgState<'a> {
             None => None,
         }
     }
+    pub fn print(&self) {
+        println!("------ PROGRAM STATE ------");
+        for var in &(self.0.borrow().var_list) {
+            let (var_name, ValueBind::Vb(type_name, var_value)) = var;
+            println!(
+                "Var: {}    Type: {}    Value: {}",
+                var_name, type_name, var_value
+            )
+        }
+        println!("------ PROGRAM STATE ------");
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -49,11 +60,33 @@ enum VarValue {
     Bool(bool),
 }
 
+impl fmt::Display for VarValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            VarValue::Int(i) => write!(f, "{}", i),
+            VarValue::Float(i) => write!(f, "{}", i),
+            VarValue::Bool(i) => write!(f, "{}", i),
+        }
+    }
+}
+
 #[derive(Debug)]
 enum RuntimeErr {
     TypeMismatch,
     Unknown,
     VarUsedBeforeDefine,
+}
+
+impl RuntimeErr {
+    pub fn print(&self) {
+        println!("------ Runtime Error ------");
+        match self {
+            RuntimeErr::TypeMismatch => println!("[Error] Type mismatch in an expression"),
+            RuntimeErr::VarUsedBeforeDefine => println!("[Error] Var used before defined"),
+            RuntimeErr::Unknown => println!("[Error] An exception has occurred "),
+        }
+        println!("------ Runtime Error ------");
+    }
 }
 
 fn type_dec(v1: VarValue, v2: VarValue) -> bool {
