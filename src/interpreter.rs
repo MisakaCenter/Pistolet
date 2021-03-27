@@ -92,8 +92,11 @@ fn expr_eval<'a>(expr: PistoletExpr<'a>, state: &'a ProgState<'a>) -> Result<Val
             }
         },
         PistoletExpr::Add(e1, e2) => {
-            let v1 = expr_eval(*e1, state).unwrap().get_value();
-            let v2 = expr_eval(*e2, state).unwrap().get_value();
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Int(n) => match v2 {
@@ -114,25 +117,37 @@ fn expr_eval<'a>(expr: PistoletExpr<'a>, state: &'a ProgState<'a>) -> Result<Val
     }
 }
 
-fn seq_eval<'a>(ast: PistoletAST<'a>, state: &'a ProgState<'a>) {
+fn seq_eval<'a>(ast: PistoletAST<'a>, state: &'a ProgState<'a>) -> Option<RuntimeErr> {
+    let mut error: RuntimeErr = RuntimeErr::Unknown;
+    let mut error_state = false;
     match ast {
         PistoletAST::Seq(term_list) => {
             for term in term_list {
-                ast_eval(term, state).expect("RunTime Error");
+                match ast_eval(term, state) {
+                    Ok(_) => continue,
+                    Err(err) => {error = err; error_state = true; break}
+                }
             };
         },
         _ => unreachable!()
+    }
+    if error_state {
+        Some(error)
+    } else {
+        None
     }
 }
 
 fn ast_eval<'a>(ast: PistoletAST<'a>, state: &'a ProgState<'a>) -> Result<&'a ProgState<'a>, RuntimeErr> {
     match ast {
         PistoletAST::Seq(term_list) => {
-            seq_eval(PistoletAST::Seq(term_list), state);
-            Ok(state)
+            match seq_eval(PistoletAST::Seq(term_list), state) {
+                Some(err) => Err(err),
+                None => Ok(state)
+            }
         },
         PistoletAST::Let(var_name, var_type, var_expr) => {
-            let var_value = expr_eval(var_expr, state).unwrap();
+            let var_value = expr_eval(var_expr, state)?;
             if var_value.get_type().eq_ignore_ascii_case(var_type) {
                 state.insert(var_name, var_value);
                 Ok(state)
