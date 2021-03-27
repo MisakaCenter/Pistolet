@@ -1,11 +1,10 @@
-
 #[derive(Debug, Clone)]
 enum PistoletValue<'a> {
     Integer(i128),
     Float(f64),
     Boolean(bool),
     Var(&'a str),
-    Funcall(&'a str, Vec<PistoletExpr<'a>>)
+    Funcall(&'a str, Vec<PistoletExpr<'a>>),
 }
 
 #[derive(Debug, Clone)]
@@ -31,5 +30,5 @@ enum PistoletAST<'a> {
     Varbind(&'a str, &'a str),
     Paralist(Vec<PistoletAST<'a>>),
     Fun(&'a str, Box<PistoletAST<'a>>, &'a str, Box<PistoletAST<'a>>),
-    EOI
+    EOI,
 }

@@ -7,9 +7,9 @@ extern crate pest_derive;
 #[macro_use]
 extern crate lazy_static;
 
-use pest::Parser;
 use pest::error::Error;
 use pest::prec_climber::{Assoc, Operator, PrecClimber};
+use pest::Parser;
 
 #[derive(Parser)]
 #[grammar = "pistolet.pest"]
@@ -17,22 +17,22 @@ pub struct PistoletParser;
 
 lazy_static! {
     static ref PREC_CLIMBER: PrecClimber<Rule> = {
-        use Rule::*;
         use Assoc::*;
+        use Rule::*;
         PrecClimber::new(vec![
             Operator::new(add, Left) | Operator::new(sub, Left),
             Operator::new(mul, Left) | Operator::new(div, Left),
             Operator::new(and, Left) | Operator::new(or, Left) | Operator::new(xor, Left),
-            Operator::new(eq, Left)
+            Operator::new(eq, Left),
         ])
     };
 }
 
-
 fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
     let pistolet_prog = PistoletParser::parse(Rule::program, &file)
-                            .expect("unsuccessful parse")
-                            .next().unwrap();
+        .expect("unsuccessful parse")
+        .next()
+        .unwrap();
     use pest::iterators::Pair;
     use pest::iterators::Pairs;
 
@@ -49,16 +49,16 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
                             Rule::FUN_NAME => x.as_str(),
-                            _ => unreachable!()
+                            _ => unreachable!(),
                         }
                     },
-                    new_pair.map(unwarp_expr).map(parse_expr).collect()
+                    new_pair.map(unwarp_expr).map(parse_expr).collect(),
                 )
-            },
-            _ => unreachable!()
+            }
+            _ => unreachable!(),
         }
     }
-    
+
     fn unwarp_expr(exp: Pair<Rule>) -> Pairs<Rule> {
         exp.into_inner()
     }
@@ -69,23 +69,28 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
             |pair: Pair<Rule>| match pair.as_rule() {
                 Rule::VALUE => PistoletExpr::Val(parse_value(pair.into_inner().peek().unwrap())),
                 Rule::EXPR => parse_expr(pair.into_inner()),
-                Rule::BOOL_VALUE => PistoletExpr::Val(parse_value(pair.into_inner().peek().unwrap())),
+                Rule::BOOL_VALUE => {
+                    PistoletExpr::Val(parse_value(pair.into_inner().peek().unwrap()))
+                }
                 Rule::BOOL_EXPR => parse_expr(pair.into_inner()),
                 Rule::EXPR_NoTy => parse_expr(pair.into_inner()),
                 Rule::EQ_EXPR => parse_expr(pair.into_inner()),
-                _ => {println!("{:#?}",pair); unreachable!()}
+                _ => {
+                    println!("{:#?}", pair);
+                    unreachable!()
+                }
             },
             |lhs: PistoletExpr, op: Pair<Rule>, rhs: PistoletExpr| match op.as_rule() {
-                Rule::and      => PistoletExpr::And(Box::new(lhs),Box::new(rhs)),
-                Rule::or => PistoletExpr::Orb(Box::new(lhs),Box::new(rhs)),
-                Rule::xor => PistoletExpr::Xor(Box::new(lhs),Box::new(rhs)),
-                Rule::add      => PistoletExpr::Add(Box::new(lhs),Box::new(rhs)),
-                Rule::sub      => PistoletExpr::Sub(Box::new(lhs),Box::new(rhs)),
-                Rule::mul      => PistoletExpr::Mul(Box::new(lhs),Box::new(rhs)),
-                Rule::div      => PistoletExpr::Div(Box::new(lhs),Box::new(rhs)),
-                Rule::eq => PistoletExpr::Eq(Box::new(lhs),Box::new(rhs)),
-                _ => unreachable!()
-            }
+                Rule::and => PistoletExpr::And(Box::new(lhs), Box::new(rhs)),
+                Rule::or => PistoletExpr::Orb(Box::new(lhs), Box::new(rhs)),
+                Rule::xor => PistoletExpr::Xor(Box::new(lhs), Box::new(rhs)),
+                Rule::add => PistoletExpr::Add(Box::new(lhs), Box::new(rhs)),
+                Rule::sub => PistoletExpr::Sub(Box::new(lhs), Box::new(rhs)),
+                Rule::mul => PistoletExpr::Mul(Box::new(lhs), Box::new(rhs)),
+                Rule::div => PistoletExpr::Div(Box::new(lhs), Box::new(rhs)),
+                Rule::eq => PistoletExpr::Eq(Box::new(lhs), Box::new(rhs)),
+                _ => unreachable!(),
+            },
         )
     }
 
@@ -98,99 +103,122 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
             Rule::LET => {
                 let mut new_pair = pair.into_inner();
                 PistoletAST::Let(
-                    {let x = new_pair.next().unwrap();
-                    match x.as_rule() {
-                        Rule::VAR_NAME => x.as_str(),
-                        Rule::TYPE_NAME => x.as_str(),
-                        _ => unreachable!()
-                    }},
-                    {let x = new_pair.next().unwrap();
+                    {
+                        let x = new_pair.next().unwrap();
                         match x.as_rule() {
                             Rule::VAR_NAME => x.as_str(),
                             Rule::TYPE_NAME => x.as_str(),
-                            _ => unreachable!()
-                    }},
+                            _ => unreachable!(),
+                        }
+                    },
+                    {
+                        let x = new_pair.next().unwrap();
+                        match x.as_rule() {
+                            Rule::VAR_NAME => x.as_str(),
+                            Rule::TYPE_NAME => x.as_str(),
+                            _ => unreachable!(),
+                        }
+                    },
                     match new_pair.peek().unwrap().as_rule() {
                         Rule::EXPR_NoTy => parse_expr(new_pair.peek().unwrap().into_inner()),
-                        _ => unreachable!()
-                    }
+                        _ => unreachable!(),
+                    },
                 )
-            },
+            }
             Rule::IF => {
                 let mut new_pair = pair.into_inner();
                 PistoletAST::If(
-                    {let x = new_pair.next().unwrap();
-                    match x.as_rule() {
-                        Rule::BOOL_EXPR => parse_expr(x.into_inner()),
-                        _ => unreachable!()
-                    }},
-                    {let x = new_pair.next().unwrap();
+                    {
+                        let x = new_pair.next().unwrap();
+                        match x.as_rule() {
+                            Rule::BOOL_EXPR => parse_expr(x.into_inner()),
+                            _ => unreachable!(),
+                        }
+                    },
+                    {
+                        let x = new_pair.next().unwrap();
                         match x.as_rule() {
                             Rule::TERM => Box::new(parse_prog(x)),
-                            _ => unreachable!()
-                    }},
+                            _ => unreachable!(),
+                        }
+                    },
                     match new_pair.peek().unwrap().as_rule() {
                         Rule::TERM => Box::new(parse_prog(new_pair.peek().unwrap())),
-                        _ => unreachable!()
-                    }
+                        _ => unreachable!(),
+                    },
                 )
-            },
+            }
             Rule::WHILE => {
                 let mut new_pair = pair.into_inner();
                 PistoletAST::While(
-                    {let x = new_pair.next().unwrap();
-                    match x.as_rule() {
-                        Rule::BOOL_EXPR => parse_expr(x.into_inner()),
-                        _ => unreachable!()
-                    }},
-                    {let x = new_pair.next().unwrap();
+                    {
+                        let x = new_pair.next().unwrap();
+                        match x.as_rule() {
+                            Rule::BOOL_EXPR => parse_expr(x.into_inner()),
+                            _ => unreachable!(),
+                        }
+                    },
+                    {
+                        let x = new_pair.next().unwrap();
                         match x.as_rule() {
                             Rule::TERM => Box::new(parse_prog(x)),
-                            _ => unreachable!()
-                    }}
+                            _ => unreachable!(),
+                        }
+                    },
                 )
-            },
+            }
             Rule::RETURN => PistoletAST::Return(parse_expr(pair.into_inner())),
             Rule::VAR_BIND => {
-                let mut new_pair = pair.into_inner();    
+                let mut new_pair = pair.into_inner();
                 PistoletAST::Varbind(
-                    {let x = new_pair.next().unwrap();
-                    match x.as_rule() {
-                        Rule::VAR_NAME => x.as_str(),
-                        _ => unreachable!()
-                    }},
+                    {
+                        let x = new_pair.next().unwrap();
+                        match x.as_rule() {
+                            Rule::VAR_NAME => x.as_str(),
+                            _ => unreachable!(),
+                        }
+                    },
                     match new_pair.peek().unwrap().as_rule() {
                         Rule::TYPE_NAME => new_pair.as_str(),
-                        _ => unreachable!()
-                    }
+                        _ => unreachable!(),
+                    },
                 )
-            },
+            }
             Rule::FUN => {
                 let mut new_pair = pair.into_inner();
                 PistoletAST::Fun(
-                    {let x = new_pair.next().unwrap();
-                    match x.as_rule() {
-                        Rule::FUN_NAME => x.as_str(),
-                        _ => unreachable!()
-                    }},
-                    {let x = new_pair.next().unwrap();
+                    {
+                        let x = new_pair.next().unwrap();
+                        match x.as_rule() {
+                            Rule::FUN_NAME => x.as_str(),
+                            _ => unreachable!(),
+                        }
+                    },
+                    {
+                        let x = new_pair.next().unwrap();
                         match x.as_rule() {
                             Rule::PARA_LIST => Box::new(parse_prog(x)),
-                            _ => unreachable!()
-                    }},
-                    {let x = new_pair.next().unwrap();
+                            _ => unreachable!(),
+                        }
+                    },
+                    {
+                        let x = new_pair.next().unwrap();
                         match x.as_rule() {
                             Rule::TYPE_NAME => x.as_str(),
-                            _ => unreachable!()
-                    }},
+                            _ => unreachable!(),
+                        }
+                    },
                     match new_pair.peek().unwrap().as_rule() {
                         Rule::TERM => Box::new(parse_prog(new_pair.peek().unwrap())),
-                        _ => unreachable!()
-                    }
+                        _ => unreachable!(),
+                    },
                 )
-            },
+            }
             Rule::EOI => PistoletAST::EOI,
-            _ => {println!("{:#?}", pair); unimplemented!()}
+            _ => {
+                println!("{:#?}", pair);
+                unimplemented!()
+            }
         }
     }
 
