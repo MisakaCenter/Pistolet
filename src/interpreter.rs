@@ -1,17 +1,18 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::fmt;
 use std::rc::Rc;
 
-#[derive(Debug, Clone, Copy)]
-enum ValueBind<'a> {
-    Vb(&'a str, VarValue), /* type, value*/
+#[derive(Debug, Clone)]
+enum ValueBind {
+    Vb(String, VarValue), /* type, value*/
 }
 
-impl<'a> ValueBind<'a> {
-    pub fn get_type(&self) -> &'a str {
+impl ValueBind {
+    pub fn get_type(&self) -> String {
         match self {
-            ValueBind::Vb(t, _) => t,
+            ValueBind::Vb(t, _) => t.to_string(),
         }
     }
     pub fn get_value(&self) -> VarValue {
@@ -22,21 +23,84 @@ impl<'a> ValueBind<'a> {
 }
 
 #[derive(Debug, Clone)]
-struct ProgList<'a> {
-    var_list: HashMap<&'a str, ValueBind<'a>>,
-    func_list: HashMap<&'a str, PistoletAST<'a>>,
+struct ProgList {
+    var_list: HashMap<String, ValueBind>,
+    func_list: HashMap<String, PistoletAST>,
 }
 
 #[derive(Debug, Clone)]
-struct ProgState<'a>(Rc<RefCell<ProgList<'a>>>);
+struct ProgState(Rc<RefCell<ProgList>>);
 
-impl<'a> ProgState<'a> {
-    pub fn insert(&self, var_name: &'a str, var_value: ValueBind<'a>) {
+#[derive(Debug, Clone)]
+struct StateVec {
+    states: VecDeque<ProgState>,
+}
+
+#[derive(Debug, Clone)]
+struct ProgStates(Rc<RefCell<StateVec>>);
+
+impl ProgStates {
+    pub fn new() -> ProgStates {
+        let main_state = ProgState(Rc::new(RefCell::new(ProgList {
+            var_list: HashMap::new(),
+            func_list: HashMap::new(),
+        })));
+
+        let state = ProgStates(Rc::new(RefCell::new(StateVec {
+            states: VecDeque::new(),
+        })));
+
+        state.push_back(main_state);
+        return state;
+    }
+    pub fn push_front(&self, state: ProgState) {
+        self.0.borrow_mut().states.push_front(state)
+    }
+    pub fn push_back(&self, state: ProgState) {
+        self.0.borrow_mut().states.push_back(state)
+    }
+    pub fn pop_front(&self) {
+        self.0.borrow_mut().states.pop_front();
+    }
+    pub fn find_var(&self, name: String) -> Result<ValueBind, RuntimeErr> {
+        let mut r: ValueBind = ValueBind::Vb("foo".to_string(), VarValue::Bool(true));
+        let mut find_var: bool = false;
+        for state in self.0.borrow().states.iter() {
+            match state.get(name.clone()) {
+                Some(result) => {
+                    r = result.clone();
+                    find_var = true;
+                    break;
+                }
+                None => continue,
+            }
+        }
+        if find_var {
+            Ok(r)
+        } else {
+            Err(RuntimeErr::VarUsedBeforeDefine)
+        }
+    }
+    pub fn insert(&self, var_name: String, var_value: ValueBind) {
+        self.0
+            .borrow_mut()
+            .states
+            .get(0)
+            .unwrap()
+            .insert(var_name, var_value);
+    }
+    pub fn print(&self) {
+        self.0.borrow_mut().states.get(0).unwrap().print();
+    }
+}
+
+impl ProgState {
+    pub fn insert(&self, var_name: String, var_value: ValueBind) {
         self.0.borrow_mut().var_list.insert(var_name, var_value);
     }
-    pub fn get(&self, var_name: &'a str) -> Option<ValueBind> {
-        match self.0.borrow().var_list.get(var_name) {
-            Some(n) => Some(*n),
+    pub fn get(&self, var_name: String) -> Option<ValueBind> {
+        match self.0.borrow().var_list.get(&var_name) {
+            Some(n) => Some(n.clone()),
             None => None,
         }
     }
@@ -108,42 +172,37 @@ fn type_dec(v1: VarValue, v2: VarValue) -> bool {
     }
 }
 
-fn var_eval<'a>(
-    name: &'a str,
-    global_state: &'a ProgState<'a>,
-) -> Result<ValueBind<'a>, RuntimeErr> {
-    match global_state.get(name) {
-        Some(result) => Ok(result),
-        None => Err(RuntimeErr::VarUsedBeforeDefine),
-    }
+fn var_eval(name: String, states: ProgStates) -> Result<ValueBind, RuntimeErr> {
+    states.find_var(name)
 }
 
-fn expr_eval<'a>(
-    expr: PistoletExpr<'a>,
-    state: &'a ProgState<'a>,
-) -> Result<ValueBind<'a>, RuntimeErr> {
+fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, RuntimeErr> {
     match expr {
         PistoletExpr::Val(value) => match value {
-            PistoletValue::Integer(n) => Ok(ValueBind::Vb("int", VarValue::Int(n))),
-            PistoletValue::Float(n) => Ok(ValueBind::Vb("float", VarValue::Float(n))),
-            PistoletValue::Boolean(n) => Ok(ValueBind::Vb("bool", VarValue::Bool(n))),
+            PistoletValue::Integer(n) => Ok(ValueBind::Vb("int".to_string(), VarValue::Int(n))),
+            PistoletValue::Float(n) => Ok(ValueBind::Vb("float".to_string(), VarValue::Float(n))),
+            PistoletValue::Boolean(n) => Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n))),
             PistoletValue::Var(n) => var_eval(n, state),
             _ => unimplemented!(),
         },
         PistoletExpr::Add(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Int(n) => match v2 {
-                        VarValue::Int(m) => Ok(ValueBind::Vb("int", VarValue::Int(n + m))),
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("int".to_string(), VarValue::Int(n + m)))
+                        }
                         _ => unreachable!(),
                     },
                     VarValue::Float(n) => match v2 {
-                        VarValue::Float(m) => Ok(ValueBind::Vb("float", VarValue::Float(n + m))),
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("float".to_string(), VarValue::Float(n + m)))
+                        }
                         _ => unreachable!(),
                     },
                     _ => Err(RuntimeErr::TypeMismatch),
@@ -153,19 +212,23 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::Sub(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Int(n) => match v2 {
-                        VarValue::Int(m) => Ok(ValueBind::Vb("int", VarValue::Int(n - m))),
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("int".to_string(), VarValue::Int(n - m)))
+                        }
                         _ => unreachable!(),
                     },
                     VarValue::Float(n) => match v2 {
-                        VarValue::Float(m) => Ok(ValueBind::Vb("float", VarValue::Float(n - m))),
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("float".to_string(), VarValue::Float(n - m)))
+                        }
                         _ => unreachable!(),
                     },
                     _ => Err(RuntimeErr::TypeMismatch),
@@ -175,19 +238,23 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::Mul(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Int(n) => match v2 {
-                        VarValue::Int(m) => Ok(ValueBind::Vb("int", VarValue::Int(n * m))),
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("int".to_string(), VarValue::Int(n * m)))
+                        }
                         _ => unreachable!(),
                     },
                     VarValue::Float(n) => match v2 {
-                        VarValue::Float(m) => Ok(ValueBind::Vb("float", VarValue::Float(n * m))),
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("float".to_string(), VarValue::Float(n * m)))
+                        }
                         _ => unreachable!(),
                     },
                     _ => Err(RuntimeErr::TypeMismatch),
@@ -197,8 +264,8 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::Div(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -209,7 +276,7 @@ fn expr_eval<'a>(
                             if m == 0 {
                                 Err(RuntimeErr::DivideByZero)
                             } else {
-                                Ok(ValueBind::Vb("int", VarValue::Int(n / m)))
+                                Ok(ValueBind::Vb("int".to_string(), VarValue::Int(n / m)))
                             }
                         }
                         _ => unreachable!(),
@@ -220,7 +287,7 @@ fn expr_eval<'a>(
                             if r.is_infinite() {
                                 Err(RuntimeErr::DivideByZero)
                             } else {
-                                Ok(ValueBind::Vb("float", VarValue::Float(r)))
+                                Ok(ValueBind::Vb("float".to_string(), VarValue::Float(r)))
                             }
                         }
                         _ => unreachable!(),
@@ -232,15 +299,17 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::And(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Bool(n) => match v2 {
-                        VarValue::Bool(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n && m))),
+                        VarValue::Bool(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n && m)))
+                        }
                         _ => unreachable!(),
                     },
                     _ => Err(RuntimeErr::TypeMismatch),
@@ -250,15 +319,17 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::Orb(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Bool(n) => match v2 {
-                        VarValue::Bool(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n || m))),
+                        VarValue::Bool(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n || m)))
+                        }
                         _ => unreachable!(),
                     },
                     _ => Err(RuntimeErr::TypeMismatch),
@@ -268,15 +339,17 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::Nand(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Bool(n) => match v2 {
-                        VarValue::Bool(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(!(n && m)))),
+                        VarValue::Bool(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(!(n && m))))
+                        }
                         _ => unreachable!(),
                     },
                     _ => Err(RuntimeErr::TypeMismatch),
@@ -286,19 +359,23 @@ fn expr_eval<'a>(
             }
         }
         PistoletExpr::Eq(e1, e2) => {
-            let v1 = expr_eval(*e1, state)?;
-            let v2 = expr_eval(*e2, state)?;
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
             if type_dec(v1, v2) {
                 match v1 {
                     VarValue::Int(n) => match v2 {
-                        VarValue::Int(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n == m))),
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n == m)))
+                        }
                         _ => unreachable!(),
                     },
                     VarValue::Float(n) => match v2 {
-                        VarValue::Float(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n == m))),
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n == m)))
+                        }
                         _ => unreachable!(),
                     },
                     _ => unreachable!(),
@@ -310,13 +387,13 @@ fn expr_eval<'a>(
     }
 }
 
-fn seq_eval<'a>(ast: PistoletAST<'a>, state: &'a ProgState<'a>) -> Option<RuntimeErr> {
+fn seq_eval(ast: PistoletAST, state: ProgStates) -> Option<RuntimeErr> {
     let mut error: RuntimeErr = RuntimeErr::Unknown;
     let mut error_state = false;
     match ast {
         PistoletAST::Seq(term_list) => {
             for term in term_list {
-                match ast_eval(term, state) {
+                match ast_eval(term, state.clone()) {
                     Ok(_) => continue,
                     Err(err) => {
                         error = err;
@@ -335,22 +412,50 @@ fn seq_eval<'a>(ast: PistoletAST<'a>, state: &'a ProgState<'a>) -> Option<Runtim
     }
 }
 
-fn ast_eval<'a>(
-    ast: PistoletAST<'a>,
-    state: &'a ProgState<'a>,
-) -> Result<&'a ProgState<'a>, RuntimeErr> {
+fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeErr> {
     match ast {
-        PistoletAST::Seq(term_list) => match seq_eval(PistoletAST::Seq(term_list), state) {
+        PistoletAST::Seq(term_list) => match seq_eval(PistoletAST::Seq(term_list), state.clone()) {
             Some(err) => Err(err),
-            None => Ok(state),
+            None => Ok(state.clone()),
         },
         PistoletAST::Let(var_name, var_type, var_expr) => {
-            let var_value = expr_eval(var_expr, state)?;
-            if var_value.get_type().eq_ignore_ascii_case(var_type) {
+            let var_value = expr_eval(var_expr, state.clone())?;
+            if var_value.get_type().eq_ignore_ascii_case(&var_type) {
                 state.insert(var_name, var_value);
                 Ok(state)
             } else {
                 Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletAST::If(expr, branch_true, branch_false) => {
+            let expr_value = expr_eval(expr, state.clone())?;
+            let sub_state = ProgState(Rc::new(RefCell::new(ProgList {
+                var_list: HashMap::new(),
+                func_list: HashMap::new(),
+            })));
+            state.push_front(sub_state);
+            match expr_value.get_value() {
+                VarValue::Bool(true) => match seq_eval(*branch_true, state.clone()) {
+                    Some(err) => {
+                        state.pop_front();
+                        Err(err)
+                    }
+                    None => {
+                        state.pop_front();
+                        Ok(state)
+                    }
+                },
+                VarValue::Bool(false) => match seq_eval(*branch_false, state.clone()) {
+                    Some(err) => {
+                        state.pop_front();
+                        Err(err)
+                    }
+                    None => {
+                        state.pop_front();
+                        Ok(state)
+                    }
+                },
+                _ => unreachable!(),
             }
         }
         PistoletAST::EOI => Ok(state),

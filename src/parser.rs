@@ -41,14 +41,14 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
             Rule::INTEGER => PistoletValue::Integer(pair.as_str().parse().unwrap()),
             Rule::FLOAT => PistoletValue::Float(pair.as_str().parse().unwrap()),
             Rule::BOOL => PistoletValue::Boolean(pair.as_str().parse().unwrap()),
-            Rule::VAR_NAME => PistoletValue::Var(pair.as_str()),
+            Rule::VAR_NAME => PistoletValue::Var(pair.as_str().to_string()),
             Rule::FUN_CALL => {
                 let mut new_pair = pair.into_inner();
                 PistoletValue::Funcall(
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::FUN_NAME => x.as_str(),
+                            Rule::FUN_NAME => x.as_str().to_string(),
                             _ => unreachable!(),
                         }
                     },
@@ -106,16 +106,16 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::VAR_NAME => x.as_str(),
-                            Rule::TYPE_NAME => x.as_str(),
+                            Rule::VAR_NAME => x.as_str().to_string(),
+                            Rule::TYPE_NAME => x.as_str().to_string(),
                             _ => unreachable!(),
                         }
                     },
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::VAR_NAME => x.as_str(),
-                            Rule::TYPE_NAME => x.as_str(),
+                            Rule::VAR_NAME => x.as_str().to_string(),
+                            Rule::TYPE_NAME => x.as_str().to_string(),
                             _ => unreachable!(),
                         }
                     },
@@ -174,12 +174,12 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::VAR_NAME => x.as_str(),
+                            Rule::VAR_NAME => x.as_str().to_string(),
                             _ => unreachable!(),
                         }
                     },
                     match new_pair.peek().unwrap().as_rule() {
-                        Rule::TYPE_NAME => new_pair.as_str(),
+                        Rule::TYPE_NAME => new_pair.as_str().to_string(),
                         _ => unreachable!(),
                     },
                 )
@@ -190,7 +190,7 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::FUN_NAME => x.as_str(),
+                            Rule::FUN_NAME => x.as_str().to_string(),
                             _ => unreachable!(),
                         }
                     },
@@ -204,7 +204,7 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::TYPE_NAME => x.as_str(),
+                            Rule::TYPE_NAME => x.as_str().to_string(),
                             _ => unreachable!(),
                         }
                     },

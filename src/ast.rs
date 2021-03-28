@@ -1,34 +1,34 @@
 #[derive(Debug, Clone)]
-enum PistoletValue<'a> {
+enum PistoletValue {
     Integer(i128),
     Float(f64),
     Boolean(bool),
-    Var(&'a str),
-    Funcall(&'a str, Vec<PistoletExpr<'a>>),
+    Var(String),
+    Funcall(String, Vec<PistoletExpr>),
 }
 
 #[derive(Debug, Clone)]
-enum PistoletExpr<'a> {
-    Val(PistoletValue<'a>),
-    Add(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Sub(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Mul(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Div(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    And(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Orb(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Nand(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Eq(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
+enum PistoletExpr {
+    Val(PistoletValue),
+    Add(Box<PistoletExpr>, Box<PistoletExpr>),
+    Sub(Box<PistoletExpr>, Box<PistoletExpr>),
+    Mul(Box<PistoletExpr>, Box<PistoletExpr>),
+    Div(Box<PistoletExpr>, Box<PistoletExpr>),
+    And(Box<PistoletExpr>, Box<PistoletExpr>),
+    Orb(Box<PistoletExpr>, Box<PistoletExpr>),
+    Nand(Box<PistoletExpr>, Box<PistoletExpr>),
+    Eq(Box<PistoletExpr>, Box<PistoletExpr>),
 }
 
 #[derive(Debug, Clone)]
-enum PistoletAST<'a> {
-    Seq(Vec<PistoletAST<'a>>),
-    Let(&'a str, &'a str, PistoletExpr<'a>),
-    If(PistoletExpr<'a>, Box<PistoletAST<'a>>, Box<PistoletAST<'a>>),
-    While(PistoletExpr<'a>, Box<PistoletAST<'a>>),
-    Return(PistoletExpr<'a>),
-    Varbind(&'a str, &'a str),
-    Paralist(Vec<PistoletAST<'a>>),
-    Fun(&'a str, Box<PistoletAST<'a>>, &'a str, Box<PistoletAST<'a>>),
+enum PistoletAST {
+    Seq(Vec<PistoletAST>),
+    Let(String, String, PistoletExpr),
+    If(PistoletExpr, Box<PistoletAST>, Box<PistoletAST>),
+    While(PistoletExpr, Box<PistoletAST>),
+    Return(PistoletExpr),
+    Varbind(String, String),
+    Paralist(Vec<PistoletAST>),
+    Fun(String, Box<PistoletAST>, String, Box<PistoletAST>),
     EOI,
 }
