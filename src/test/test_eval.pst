@@ -1,5 +1,6 @@
 let k : int = 0.
 let i : int = 0.
+let if_dec : bool = false.
 
 loop{
     let k : int = k + 1.
@@ -7,4 +8,8 @@ loop{
     println(i).
 }~>(k =? 10)
 
-return(k).
+if if_dec {
+    return(114).
+} {
+    return(514).
+}
