@@ -21,7 +21,10 @@ fn main() {
     let eval_result = ast_eval(parse_to_ast(&unparsed_file).unwrap(), state);
     match eval_result {
         Ok(result) => result.print(),
-        Err(err_code) => err_code.print(),
+        Err(err_code) => match err_code {
+            RuntimeErr::ReturnValue(expr_value) => println!("[Return Value] {} : {}", expr_value.get_value(), expr_value.get_type()),
+            _ => err_code.print()
+        }
     }
     println!("[Test] Interpreter Test Complete!");
 }

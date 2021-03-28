@@ -140,6 +140,7 @@ enum RuntimeErr {
     Unknown,
     VarUsedBeforeDefine,
     DivideByZero,
+    ReturnValue(ValueBind),
 }
 
 impl RuntimeErr {
@@ -150,6 +151,7 @@ impl RuntimeErr {
             RuntimeErr::VarUsedBeforeDefine => println!("[Error] Var used before defined"),
             RuntimeErr::Unknown => println!("[Error] An exception has occurred"),
             RuntimeErr::DivideByZero => println!("[Error] Attempt to divide by zero "),
+            _ => unreachable!(),
         }
         println!("------ Runtime Error ------");
     }
@@ -457,6 +459,10 @@ fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeEr
                 },
                 _ => unreachable!(),
             }
+        }
+        PistoletAST::Return(expr) => {
+            let expr_value = expr_eval(expr, state.clone())?;
+            Err(RuntimeErr::ReturnValue(expr_value))
         }
         PistoletAST::EOI => Ok(state),
         _ => Err(RuntimeErr::Unknown),

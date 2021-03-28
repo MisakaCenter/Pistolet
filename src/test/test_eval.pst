@@ -3,12 +3,14 @@ let x: int = 100 - 20.
 let y: int = x.
 let z: int = y.
 let x: int = x + y + z.
-let k: float = 1.0.
+let k: float = 1.0. 
 let hh: bool = true.
 
-if (hh) {
-    let x : int = 1.
+if (hh && true) {
+    let y : int = 1.
+    return z.
 }
 {
     let x : int = 2.
+    return x.
 }
