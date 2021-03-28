@@ -215,6 +215,13 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                 )
             }
             Rule::EOI => PistoletAST::EOI,
+            Rule::PrintLine => {
+                let new_pair = pair.into_inner();
+                match new_pair.peek().unwrap().as_rule() {
+                    Rule::EXPR_NoTy => PistoletAST::PrintLine(parse_expr(new_pair)),
+                    _ => unreachable!(),
+                }
+            }
             _ => {
                 println!("{:#?}", pair);
                 unimplemented!()

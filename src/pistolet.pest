@@ -1,14 +1,19 @@
 program = { SOI ~ sentence+ ~ EOI}
 
 sentence = {
-    (FUN | LET | WHILE | IF | RETURN)
+    (FUN | LET | WHILE | IF | RETURN | PrintLine)
 }
 
 TERM = {
     "{" ~
-    (FUN | LET | WHILE | IF | RETURN)+
+    (FUN | LET | WHILE | IF | RETURN | PrintLine)+
     ~ "}"
 }
+
+PrintLine = {
+    "println" ~ "(" ~ EXPR_Noty_A ~ ")" ~ "."
+}
+
 
 FUN_CALL = {
     FUN_NAME ~ "(" ~ EXPR_Noty_A ~ ("," ~ EXPR_Noty_A)* ~ ")"

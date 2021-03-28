@@ -30,5 +30,6 @@ enum PistoletAST {
     Varbind(String, String),
     Paralist(Vec<PistoletAST>),
     Fun(String, Box<PistoletAST>, String, Box<PistoletAST>),
+    PrintLine(PistoletExpr),
     EOI,
 }

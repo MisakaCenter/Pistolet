@@ -8,9 +8,12 @@ let hh: bool = true.
 
 if (hh && true) {
     let y : int = 1.
-    return z.
+    println(y).
 }
 {
     let x : int = 2.
-    return x.
+    println(x).
 }
+
+println(y).
+return(k).

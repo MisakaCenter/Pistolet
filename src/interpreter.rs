@@ -464,6 +464,11 @@ fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeEr
             let expr_value = expr_eval(expr, state.clone())?;
             Err(RuntimeErr::ReturnValue(expr_value))
         }
+        PistoletAST::PrintLine(expr) => {
+            let expr_value = expr_eval(expr, state.clone())?;
+            println!("{} : {}", expr_value.get_value(), expr_value.get_type());
+            Ok(state)
+        }
         PistoletAST::EOI => Ok(state),
         _ => Err(RuntimeErr::Unknown),
     }
