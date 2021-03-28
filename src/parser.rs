@@ -22,7 +22,7 @@ lazy_static! {
         PrecClimber::new(vec![
             Operator::new(add, Left) | Operator::new(sub, Left),
             Operator::new(mul, Left) | Operator::new(div, Left),
-            Operator::new(and, Left) | Operator::new(or, Left) | Operator::new(xor, Left),
+            Operator::new(and, Left) | Operator::new(or, Left) | Operator::new(nand, Left),
             Operator::new(eq, Left),
         ])
     };
@@ -83,7 +83,7 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
             |lhs: PistoletExpr, op: Pair<Rule>, rhs: PistoletExpr| match op.as_rule() {
                 Rule::and => PistoletExpr::And(Box::new(lhs), Box::new(rhs)),
                 Rule::or => PistoletExpr::Orb(Box::new(lhs), Box::new(rhs)),
-                Rule::xor => PistoletExpr::Xor(Box::new(lhs), Box::new(rhs)),
+                Rule::nand => PistoletExpr::Nand(Box::new(lhs), Box::new(rhs)),
                 Rule::add => PistoletExpr::Add(Box::new(lhs), Box::new(rhs)),
                 Rule::sub => PistoletExpr::Sub(Box::new(lhs), Box::new(rhs)),
                 Rule::mul => PistoletExpr::Mul(Box::new(lhs), Box::new(rhs)),

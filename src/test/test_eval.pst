@@ -1,4 +1,7 @@
-let x: int = 100.
+let x : bool = 1 =? 1.
+let x: int = 100 - 20.
 let y: int = x.
 let z: int = y.
 let x: int = x + y + z.
+let k: float = 1.0.
+let hh: bool = true.

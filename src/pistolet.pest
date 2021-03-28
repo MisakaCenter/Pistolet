@@ -19,7 +19,7 @@ EXPR_Noty_A = _{
 }
 
 EXPR_NoTy = { 
-    EQ_EXPR | (EXPR_NoTy_T ~ ((and | or | xor | add | sub | mul | div) ~ EXPR_NoTy_T)*)
+    EQ_EXPR | (EXPR_NoTy_T ~ ((and | or | nand | add | sub | mul | div) ~ EXPR_NoTy_T)*)
 }
 
 EXPR_NoTy_T = _{ 
@@ -35,7 +35,7 @@ NONE = {
 }
 
 BOOL_EXPR = { 
-    BOOL_EXPR_T ~ ((and | or | xor) ~ BOOL_EXPR_T)* 
+    BOOL_EXPR_T ~ ((and | or | nand) ~ BOOL_EXPR_T)* 
 }
 
 BOOL_EXPR_T = _{ 
@@ -110,7 +110,7 @@ and = { "&&" }
 
 or = { "||" }   
 
-xor = { "<|" }
+nand = { "~&&" }
 
 eq = { "=?" }
 

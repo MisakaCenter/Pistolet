@@ -11,7 +11,7 @@ if (b && true)
 {let x: nat = y. let x: nat = y. return 1.} 
 {let x: nat = y. return x+y.}
 
-let y: bool = (1 =? 1) && true <| x.
+let y: bool = (true =? true) && true ~&& x.
 
 let x: int = 1 + xx - 1.
 

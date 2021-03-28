@@ -75,6 +75,7 @@ enum RuntimeErr {
     TypeMismatch,
     Unknown,
     VarUsedBeforeDefine,
+    DivideByZero,
 }
 
 impl RuntimeErr {
@@ -83,7 +84,8 @@ impl RuntimeErr {
         match self {
             RuntimeErr::TypeMismatch => println!("[Error] Type mismatch in an expression"),
             RuntimeErr::VarUsedBeforeDefine => println!("[Error] Var used before defined"),
-            RuntimeErr::Unknown => println!("[Error] An exception has occurred "),
+            RuntimeErr::Unknown => println!("[Error] An exception has occurred"),
+            RuntimeErr::DivideByZero => println!("[Error] Attempt to divide by zero "),
         }
         println!("------ Runtime Error ------");
     }
@@ -144,13 +146,167 @@ fn expr_eval<'a>(
                         VarValue::Float(m) => Ok(ValueBind::Vb("float", VarValue::Float(n + m))),
                         _ => unreachable!(),
                     },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Sub(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => Ok(ValueBind::Vb("int", VarValue::Int(n - m))),
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => Ok(ValueBind::Vb("float", VarValue::Float(n - m))),
+                        _ => unreachable!(),
+                    },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Mul(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => Ok(ValueBind::Vb("int", VarValue::Int(n * m))),
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => Ok(ValueBind::Vb("float", VarValue::Float(n * m))),
+                        _ => unreachable!(),
+                    },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Div(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => {
+                            if m == 0 {
+                                Err(RuntimeErr::DivideByZero)
+                            } else {
+                                Ok(ValueBind::Vb("int", VarValue::Int(n / m)))
+                            }
+                        }
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => {
+                            let r = n / m;
+                            if r.is_infinite() {
+                                Err(RuntimeErr::DivideByZero)
+                            } else {
+                                Ok(ValueBind::Vb("float", VarValue::Float(r)))
+                            }
+                        }
+                        _ => unreachable!(),
+                    },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::And(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Bool(n) => match v2 {
+                        VarValue::Bool(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n && m))),
+                        _ => unreachable!(),
+                    },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Orb(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Bool(n) => match v2 {
+                        VarValue::Bool(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n || m))),
+                        _ => unreachable!(),
+                    },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Nand(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Bool(n) => match v2 {
+                        VarValue::Bool(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(!(n && m)))),
+                        _ => unreachable!(),
+                    },
+                    _ => Err(RuntimeErr::TypeMismatch),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Eq(e1, e2) => {
+            let v1 = expr_eval(*e1, state)?;
+            let v2 = expr_eval(*e2, state)?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n == m))),
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => Ok(ValueBind::Vb("bool", VarValue::Bool(n == m))),
+                        _ => unreachable!(),
+                    },
                     _ => unreachable!(),
                 }
             } else {
                 Err(RuntimeErr::TypeMismatch)
             }
         }
-        _ => unimplemented!(),
     }
 }
 

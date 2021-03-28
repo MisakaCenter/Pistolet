@@ -16,7 +16,7 @@ enum PistoletExpr<'a> {
     Div(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
     And(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
     Orb(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
-    Xor(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
+    Nand(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
     Eq(Box<PistoletExpr<'a>>, Box<PistoletExpr<'a>>),
 }
 
