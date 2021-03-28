@@ -154,14 +154,14 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::BOOL_EXPR => parse_expr(x.into_inner()),
+                            Rule::TERM => Box::new(parse_prog(x)),
                             _ => unreachable!(),
                         }
                     },
                     {
                         let x = new_pair.next().unwrap();
                         match x.as_rule() {
-                            Rule::TERM => Box::new(parse_prog(x)),
+                            Rule::BOOL_EXPR => parse_expr(x.into_inner()),
                             _ => unreachable!(),
                         }
                     },

@@ -40,7 +40,7 @@ NONE = {
 }
 
 BOOL_EXPR = { 
-    BOOL_EXPR_T ~ ((and | or | nand) ~ BOOL_EXPR_T)* 
+    EQ_EXPR | BOOL_EXPR_T ~ ((and | or | nand) ~ BOOL_EXPR_T)* 
 }
 
 BOOL_EXPR_T = _{ 
@@ -88,7 +88,7 @@ LET = {
 }
 
 WHILE = {
-    "while" ~ BOOL_EXPR ~ TERM
+    "loop" ~ TERM ~ "~>" ~ BOOL_EXPR
 }
 
 IF = {

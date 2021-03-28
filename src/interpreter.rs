@@ -460,6 +460,37 @@ fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeEr
                 _ => unreachable!(),
             }
         }
+        PistoletAST::While(seq, expr) => {
+            let info: Result<ProgStates, RuntimeErr>;
+            let sub_state = ProgState(Rc::new(RefCell::new(ProgList {
+                var_list: HashMap::new(),
+                func_list: HashMap::new(),
+            })));
+            state.push_front(sub_state);
+            loop {
+                match seq_eval(*seq.clone(), state.clone()) {
+                    Some(err) => {
+                        info = Err(err);
+                        break;
+                    } //Here can process break. in future...
+                    None => {
+                        let expr_value = expr_eval(expr.clone(), state.clone())?.get_value();
+                        match expr_value {
+                            VarValue::Bool(true) => {
+                                info = Ok(state.clone());
+                                break;
+                            }
+                            VarValue::Bool(false) => {
+                                continue;
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+            }
+            state.pop_front();
+            info
+        }
         PistoletAST::Return(expr) => {
             let expr_value = expr_eval(expr, state.clone())?;
             Err(RuntimeErr::ReturnValue(expr_value))

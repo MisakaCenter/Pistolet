@@ -25,7 +25,7 @@ enum PistoletAST {
     Seq(Vec<PistoletAST>),
     Let(String, String, PistoletExpr),
     If(PistoletExpr, Box<PistoletAST>, Box<PistoletAST>),
-    While(PistoletExpr, Box<PistoletAST>),
+    While(Box<PistoletAST>, PistoletExpr),
     Return(PistoletExpr),
     Varbind(String, String),
     Paralist(Vec<PistoletAST>),
