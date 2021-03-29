@@ -25,7 +25,7 @@ impl ValueBind {
 #[derive(Debug, Clone)]
 struct ProgList {
     var_list: HashMap<String, ValueBind>,
-    func_list: HashMap<String, PistoletAST>,
+    func_list: HashMap<String, (PistoletAST, String, PistoletAST)>,
 }
 
 #[derive(Debug, Clone)]
@@ -89,6 +89,20 @@ impl ProgStates {
             .unwrap()
             .insert(var_name, var_value);
     }
+    pub fn func_insert(
+        &self,
+        func_name: String,
+        para_list: PistoletAST,
+        return_type: String,
+        func_body: PistoletAST,
+    ) {
+        self.0.borrow_mut().states.get(0).unwrap().func_insert(
+            func_name,
+            para_list,
+            return_type,
+            func_body,
+        );
+    }
     pub fn print(&self) {
         self.0.borrow_mut().states.get(0).unwrap().print();
     }
@@ -97,6 +111,18 @@ impl ProgStates {
 impl ProgState {
     pub fn insert(&self, var_name: String, var_value: ValueBind) {
         self.0.borrow_mut().var_list.insert(var_name, var_value);
+    }
+    pub fn func_insert(
+        &self,
+        func_name: String,
+        para_list: PistoletAST,
+        return_type: String,
+        func_body: PistoletAST,
+    ) {
+        self.0
+            .borrow_mut()
+            .func_list
+            .insert(func_name, (para_list, return_type, func_body));
     }
     pub fn get(&self, var_name: String) -> Option<ValueBind> {
         match self.0.borrow().var_list.get(&var_name) {
@@ -490,6 +516,10 @@ fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeEr
             }
             state.pop_front();
             info
+        }
+        PistoletAST::Fun(func_name, para_list, return_type, fun_body) => {
+            state.func_insert(func_name, *para_list, return_type, *fun_body);
+            Ok(state)
         }
         PistoletAST::Return(expr) => {
             let expr_value = expr_eval(expr, state.clone())?;
