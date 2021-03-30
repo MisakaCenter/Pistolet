@@ -1,3 +1,31 @@
+fun fib (n: int) -> int {
+    if (n =? 0) {
+        return 0.
+    } {
+        if (n =? 1) {
+            return 1.
+        } {
+            return fib(n-1) + fib(n-2).
+        }
+    }
+}
+
+let i: int = 0.
+loop{
+    let i: int = i + 1.
+    println(fib(i)).
+}~>(i =? 10)
+
+fun factorial (n: int) -> int {
+    if (n =? 1) {
+        return 1.
+    } {
+        return n * factorial(n - 1).
+    }
+}
+
+println(factorial(10)).
+
 let if_dec : bool = false.
 
 let k : int = 0.
