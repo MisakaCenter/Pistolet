@@ -1,12 +1,25 @@
-let k : int = 0.
-let i : int = 0.
 let if_dec : bool = false.
 
+let k : int = 0.
 loop{
     let k : int = k + 1.
-    let i : int = i + k.
-    println(i).
-}~>(k =? 10)
+    let k1 : int = 0.
+    loop{
+    let k1 : int = k1 + 1.
+    println(k1).
+    }~>(k1 =? 5)
+}~>(k =? 5)
+
+fun foo (xx: int)(yy : bool) -> bool {
+    println(xx).
+    return yy.
+}
+
+let y : int = 100.
+
+let x : bool = foo(y + 1, true).
+
+println(x).
 
 if if_dec {
     return(114).
