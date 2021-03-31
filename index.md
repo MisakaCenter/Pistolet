@@ -7,7 +7,7 @@
 - [x] Abstract Syntax Tree
 - [x] Lexer
 - [x] Parser
-- [ ] Interpreter
+- [x] Interpreter
 - [ ] Compile to LLVM IR
 - [ ] Static Analysis (Visualize Control Flow Graph)
 - [ ] Compiler Optimization
