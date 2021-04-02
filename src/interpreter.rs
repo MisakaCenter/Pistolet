@@ -23,15 +23,20 @@ impl ValueBind {
 }
 
 #[derive(Debug, Clone)]
+struct FuncDic {
+    func_list: HashMap<String, (PistoletAST, String, PistoletAST)>
+}
+
+#[derive(Debug)]
 struct ProgList {
     var_list: HashMap<String, ValueBind>,
     func_list: HashMap<String, (PistoletAST, String, PistoletAST)>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct ProgState(Rc<RefCell<ProgList>>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct StateVec {
     states: VecDeque<ProgState>,
 }
