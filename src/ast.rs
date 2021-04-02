@@ -18,6 +18,10 @@ enum PistoletExpr {
     Orb(Box<PistoletExpr>, Box<PistoletExpr>),
     Nand(Box<PistoletExpr>, Box<PistoletExpr>),
     Eq(Box<PistoletExpr>, Box<PistoletExpr>),
+    Leq(Box<PistoletExpr>, Box<PistoletExpr>),
+    Req(Box<PistoletExpr>, Box<PistoletExpr>),
+    Left(Box<PistoletExpr>, Box<PistoletExpr>),
+    Right(Box<PistoletExpr>, Box<PistoletExpr>)
 }
 
 #[derive(Debug, Clone)]

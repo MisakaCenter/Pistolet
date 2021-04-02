@@ -23,7 +23,7 @@ lazy_static! {
             Operator::new(add, Left) | Operator::new(sub, Left),
             Operator::new(mul, Left) | Operator::new(div, Left),
             Operator::new(and, Left) | Operator::new(or, Left) | Operator::new(nand, Left),
-            Operator::new(eq, Left),
+            Operator::new(eq, Left) | Operator::new(lefteq, Left)|Operator::new(left, Left) |Operator::new(righteq, Left) | Operator::new(right, Left) ,
         ])
     };
 }
@@ -89,6 +89,10 @@ fn parse_to_ast(file: &str) -> Result<PistoletAST, Error<Rule>> {
                 Rule::mul => PistoletExpr::Mul(Box::new(lhs), Box::new(rhs)),
                 Rule::div => PistoletExpr::Div(Box::new(lhs), Box::new(rhs)),
                 Rule::eq => PistoletExpr::Eq(Box::new(lhs), Box::new(rhs)),
+                Rule::lefteq => PistoletExpr::Leq(Box::new(lhs), Box::new(rhs)),
+                Rule::righteq => PistoletExpr::Req(Box::new(lhs), Box::new(rhs)),
+                Rule::left => PistoletExpr::Left(Box::new(lhs), Box::new(rhs)),
+                Rule::right => PistoletExpr::Right(Box::new(lhs), Box::new(rhs)),
                 _ => unreachable!(),
             },
         )

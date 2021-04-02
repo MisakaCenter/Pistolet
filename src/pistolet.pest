@@ -48,7 +48,7 @@ BOOL_EXPR_T = _{
 }
 
 EQ_EXPR = {
-    EXPR ~ eq ~ EXPR
+    EXPR ~ (eq | lefteq | left | righteq | righteq) ~ EXPR
 }
 
 EXPR = { 
@@ -118,6 +118,14 @@ or = { "||" }
 nand = { "~&&" }
 
 eq = { "=?" }
+
+lefteq = { "<=" }
+
+righteq = { ">=" }
+
+left = { "<" }
+
+right = { ">" }
 
 FUN_NAME = @{ (alpha | "_") ~ (alpha | digit | "_")* }
 

@@ -519,6 +519,110 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
                 Err(RuntimeErr::TypeMismatch)
             }
         }
+        PistoletExpr::Leq(e1, e2) => {
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n <= m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n <= m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Req(e1, e2) => {
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n >= m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n >= m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Left(e1, e2) => {
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n < m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n < m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
+        PistoletExpr::Right(e1, e2) => {
+            let v1 = expr_eval(*e1, state.clone())?;
+            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = v1.get_value();
+            let v2 = v2.get_value();
+
+            if type_dec(v1, v2) {
+                match v1 {
+                    VarValue::Int(n) => match v2 {
+                        VarValue::Int(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n > m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    VarValue::Float(n) => match v2 {
+                        VarValue::Float(m) => {
+                            Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n > m)))
+                        }
+                        _ => unreachable!(),
+                    },
+                    _ => unreachable!(),
+                }
+            } else {
+                Err(RuntimeErr::TypeMismatch)
+            }
+        }
     }
 }
 
