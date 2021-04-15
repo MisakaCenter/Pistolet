@@ -27,10 +27,48 @@ struct FuncDic {
     func_list: HashMap<String, (PistoletAST, String, PistoletAST)>
 }
 
+impl FuncDic {
+    pub fn new() -> FuncDic {
+        let func_list = FuncDic{
+            func_list: HashMap::new()
+        };
+        return func_list;
+    }
+
+    pub fn find_func(
+        &self,
+        name: String,
+    ) -> Result<(PistoletAST, String, Vec<(String, String)>), RuntimeErr> {
+        let fun = self.func_list.get(&name);
+            match fun {
+                Some(result) => {
+                    match result {
+                        (PistoletAST::Paralist(paralist), func_type, func_body) => {
+                            let para_vec = para_to_vec(paralist.clone());
+                            Ok((func_body.clone(), func_type.clone(), para_vec))
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+                None => Err(RuntimeErr::FuncUsedBeforeDefine)
+            }
+    }
+
+    pub fn func_insert(
+        &mut self,
+        func_name: String,
+        para_list: PistoletAST,
+        return_type: String,
+        func_body: PistoletAST,
+    ) {
+        self.func_list
+            .insert(func_name, (para_list, return_type, func_body));
+    }
+}
+
 #[derive(Debug)]
 struct ProgList {
-    var_list: HashMap<String, ValueBind>,
-    func_list: HashMap<String, (PistoletAST, String, PistoletAST)>,
+    var_list: HashMap<String, ValueBind>
 }
 
 #[derive(Debug)]
@@ -47,8 +85,7 @@ struct ProgStates(Rc<RefCell<StateVec>>);
 impl ProgStates {
     pub fn new() -> ProgStates {
         let main_state = ProgState(Rc::new(RefCell::new(ProgList {
-            var_list: HashMap::new(),
-            func_list: HashMap::new(),
+            var_list: HashMap::new()
         })));
 
         let state = ProgStates(Rc::new(RefCell::new(StateVec {
@@ -86,35 +123,6 @@ impl ProgStates {
             Err(RuntimeErr::VarUsedBeforeDefine)
         }
     }
-    pub fn find_func(
-        &self,
-        name: String,
-    ) -> Result<(PistoletAST, String, Vec<(String, String)>), RuntimeErr> {
-        let mut r: (PistoletAST, String, Vec<(String, String)>) =
-            (PistoletAST::EOI, "".to_string(), Vec::new());
-        let mut find_func: bool = false;
-        for state in self.0.borrow().states.iter() {
-            match state.func_get(name.clone()) {
-                Some(result) => {
-                    match result {
-                        (PistoletAST::Paralist(paralist), func_type, func_body) => {
-                            let para_vec = para_to_vec(paralist);
-                            r = (func_body, func_type, para_vec);
-                        }
-                        _ => unreachable!(),
-                    }
-                    find_func = true;
-                    break;
-                }
-                None => continue,
-            }
-        }
-        if find_func {
-            Ok(r)
-        } else {
-            Err(RuntimeErr::FuncUsedBeforeDefine)
-        }
-    }
     pub fn insert(&self, var_name: String, var_value: ValueBind) {
         self.0
             .borrow_mut()
@@ -122,20 +130,6 @@ impl ProgStates {
             .get(0)
             .unwrap()
             .insert(var_name, var_value);
-    }
-    pub fn func_insert(
-        &self,
-        func_name: String,
-        para_list: PistoletAST,
-        return_type: String,
-        func_body: PistoletAST,
-    ) {
-        self.0.borrow_mut().states.get(0).unwrap().func_insert(
-            func_name,
-            para_list,
-            return_type,
-            func_body,
-        );
     }
     pub fn print(&self) {
         self.0.borrow_mut().states.get(0).unwrap().print();
@@ -146,26 +140,8 @@ impl ProgState {
     pub fn insert(&self, var_name: String, var_value: ValueBind) {
         self.0.borrow_mut().var_list.insert(var_name, var_value);
     }
-    pub fn func_insert(
-        &self,
-        func_name: String,
-        para_list: PistoletAST,
-        return_type: String,
-        func_body: PistoletAST,
-    ) {
-        self.0
-            .borrow_mut()
-            .func_list
-            .insert(func_name, (para_list, return_type, func_body));
-    }
     pub fn get(&self, var_name: String) -> Option<ValueBind> {
         match self.0.borrow().var_list.get(&var_name) {
-            Some(n) => Some(n.clone()),
-            None => None,
-        }
-    }
-    pub fn func_get(&self, func_name: String) -> Option<(PistoletAST, String, PistoletAST)> {
-        match self.0.borrow().func_list.get(&func_name) {
             Some(n) => Some(n.clone()),
             None => None,
         }
@@ -267,17 +243,18 @@ fn func_eval(
     name: String,
     expr_list: Vec<PistoletExpr>,
     states: ProgStates,
+    func_list: FuncDic
+    
 ) -> Result<ValueBind, RuntimeErr> {
-    let (func_body, func_type, para_list) = states.find_func(name)?;
+    let (func_body, func_type, para_list) = func_list.find_func(name)?;
     let mut val_list: Vec<ValueBind> = Vec::new();
     for expr in expr_list.iter() {
-        let expr_val = expr_eval(expr.clone(), states.clone()).unwrap();
+        let expr_val = expr_eval(expr.clone(), states.clone(), func_list.clone()).unwrap();
         val_list.push(expr_val);
     }
     if val_list.len() == para_list.len() {
         let sub_state = ProgState(Rc::new(RefCell::new(ProgList {
-            var_list: HashMap::new(),
-            func_list: HashMap::new(),
+            var_list: HashMap::new()
         })));
         states.push_front(sub_state);
         for (index, val) in val_list.iter().enumerate() {
@@ -289,7 +266,7 @@ fn func_eval(
                 return Err(RuntimeErr::TypeMismatch);
             }
         }
-        let result = ast_eval(func_body, states.clone());
+        let result = ast_eval(func_body, states.clone(), &mut func_list.clone());
         let func_result: Result<ValueBind, RuntimeErr>;
         match result {
             Err(some_err) => match some_err {
@@ -311,18 +288,18 @@ fn func_eval(
     }
 }
 
-fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, RuntimeErr> {
+fn expr_eval(expr: PistoletExpr, state: ProgStates, func_list: FuncDic) -> Result<ValueBind, RuntimeErr> {
     match expr {
         PistoletExpr::Val(value) => match value {
             PistoletValue::Integer(n) => Ok(ValueBind::Vb("int".to_string(), VarValue::Int(n))),
             PistoletValue::Float(n) => Ok(ValueBind::Vb("float".to_string(), VarValue::Float(n))),
             PistoletValue::Boolean(n) => Ok(ValueBind::Vb("bool".to_string(), VarValue::Bool(n))),
             PistoletValue::Var(n) => var_eval(n, state),
-            PistoletValue::Funcall(func_name, expr_list) => func_eval(func_name, expr_list, state),
+            PistoletValue::Funcall(func_name, expr_list) => func_eval(func_name, expr_list, state, func_list.clone()),
         },
         PistoletExpr::Add(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -347,8 +324,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Sub(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -373,8 +350,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Mul(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -399,8 +376,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Div(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -434,8 +411,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::And(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -454,8 +431,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Orb(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -474,8 +451,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Nand(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -494,8 +471,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Eq(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -520,8 +497,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Leq(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -546,8 +523,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Req(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -572,8 +549,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Left(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -598,8 +575,8 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
             }
         }
         PistoletExpr::Right(e1, e2) => {
-            let v1 = expr_eval(*e1, state.clone())?;
-            let v2 = expr_eval(*e2, state.clone())?;
+            let v1 = expr_eval(*e1, state.clone(), func_list.clone())?;
+            let v2 = expr_eval(*e2, state.clone(), func_list.clone())?;
             let v1 = v1.get_value();
             let v2 = v2.get_value();
 
@@ -626,13 +603,13 @@ fn expr_eval(expr: PistoletExpr, state: ProgStates) -> Result<ValueBind, Runtime
     }
 }
 
-fn seq_eval(ast: PistoletAST, state: ProgStates) -> Option<RuntimeErr> {
+fn seq_eval(ast: PistoletAST, state: ProgStates, mut func_list: FuncDic) -> Option<RuntimeErr> {
     let mut error: RuntimeErr = RuntimeErr::Unknown;
     let mut error_state = false;
     match ast {
         PistoletAST::Seq(term_list) => {
             for term in term_list {
-                match ast_eval(term, state.clone()) {
+                match ast_eval(term, state.clone(), &mut func_list) {
                     Ok(_) => continue,
                     Err(err) => {
                         error = err;
@@ -651,70 +628,68 @@ fn seq_eval(ast: PistoletAST, state: ProgStates) -> Option<RuntimeErr> {
     }
 }
 
-fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeErr> {
+fn ast_eval(ast: PistoletAST, state: ProgStates, func_list: &mut FuncDic) -> Result<(ProgStates, FuncDic), RuntimeErr> {
     match ast {
-        PistoletAST::Seq(term_list) => match seq_eval(PistoletAST::Seq(term_list), state.clone()) {
+        PistoletAST::Seq(term_list) => match seq_eval(PistoletAST::Seq(term_list), state.clone(), func_list.clone()) {
             Some(err) => Err(err),
-            None => Ok(state.clone()),
+            None => Ok((state.clone(), func_list.clone())),
         },
         PistoletAST::Let(var_name, var_type, var_expr) => {
-            let var_value = expr_eval(var_expr, state.clone())?;
+            let var_value = expr_eval(var_expr, state.clone(), func_list.clone())?;
             if var_value.get_type().eq_ignore_ascii_case(&var_type) {
                 state.insert(var_name, var_value);
-                Ok(state)
+                Ok((state.clone(), func_list.clone()))
             } else {
                 Err(RuntimeErr::TypeMismatch)
             }
         }
         PistoletAST::If(expr, branch_true, branch_false) => {
-            let expr_value = expr_eval(expr, state.clone())?;
+            let expr_value = expr_eval(expr, state.clone(), func_list.clone())?;
             let sub_state = ProgState(Rc::new(RefCell::new(ProgList {
-                var_list: HashMap::new(),
-                func_list: HashMap::new(),
+                var_list: HashMap::new()
             })));
             state.push_front(sub_state);
             match expr_value.get_value() {
-                VarValue::Bool(true) => match seq_eval(*branch_true, state.clone()) {
+                VarValue::Bool(true) => match seq_eval(*branch_true, state.clone(), func_list.clone()) {
                     Some(err) => {
                         state.pop_front();
                         Err(err)
                     }
                     None => {
                         state.pop_front();
-                        Ok(state)
+                        Ok((state.clone(), func_list.clone()))
                     }
                 },
-                VarValue::Bool(false) => match seq_eval(*branch_false, state.clone()) {
+                VarValue::Bool(false) => match seq_eval(*branch_false, state.clone(), func_list.clone()) {
                     Some(err) => {
                         state.pop_front();
                         Err(err)
                     }
                     None => {
                         state.pop_front();
-                        Ok(state)
+                        Ok((state.clone(), func_list.clone()))
                     }
                 },
                 _ => unreachable!(),
             }
         }
         PistoletAST::While(seq, expr) => {
-            let info: Result<ProgStates, RuntimeErr>;
+            let info: Result<(ProgStates, FuncDic), RuntimeErr>;
             let sub_state = ProgState(Rc::new(RefCell::new(ProgList {
-                var_list: HashMap::new(),
-                func_list: HashMap::new(),
+                var_list: HashMap::new()
             })));
             state.push_front(sub_state);
             loop {
-                match seq_eval(*seq.clone(), state.clone()) {
+                match seq_eval(*seq.clone(), state.clone(), func_list.clone()) {
                     Some(err) => {
                         info = Err(err);
                         break;
                     } //Here can process break. in future...
                     None => {
-                        let expr_value = expr_eval(expr.clone(), state.clone())?.get_value();
+                        let expr_value = expr_eval(expr.clone(), state.clone(), func_list.clone())?.get_value();
                         match expr_value {
                             VarValue::Bool(true) => {
-                                info = Ok(state.clone());
+                                info = Ok((state.clone(), func_list.clone()));
                                 break;
                             }
                             VarValue::Bool(false) => {
@@ -729,19 +704,19 @@ fn ast_eval(ast: PistoletAST, state: ProgStates) -> Result<ProgStates, RuntimeEr
             info
         }
         PistoletAST::Fun(func_name, para_list, return_type, fun_body) => {
-            state.func_insert(func_name, *para_list, return_type, *fun_body);
-            Ok(state)
+            func_list.func_insert(func_name, *para_list, return_type, *fun_body);
+            Ok((state.clone(), func_list.clone()))
         }
         PistoletAST::Return(expr) => {
-            let expr_value = expr_eval(expr, state.clone())?;
+            let expr_value = expr_eval(expr, state, func_list.clone())?;
             Err(RuntimeErr::ReturnValue(expr_value))
         }
         PistoletAST::PrintLine(expr) => {
-            let expr_value = expr_eval(expr, state.clone())?;
+            let expr_value = expr_eval(expr, state.clone(), func_list.clone())?;
             println!("{} : {}", expr_value.get_value(), expr_value.get_type());
-            Ok(state)
+            Ok((state.clone(), func_list.clone()))
         }
-        PistoletAST::EOI => Ok(state),
+        PistoletAST::EOI => Ok((state.clone(), func_list.clone())),
         _ => Err(RuntimeErr::Unknown),
     }
 }
